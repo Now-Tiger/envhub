@@ -12,6 +12,9 @@ up: ## Start all services
 down: ## Stop all services
 	docker compose down
 
+ps: ## list containers
+	docker compose ps
+
 logs: ## View logs
 	docker compose logs -f api
 
