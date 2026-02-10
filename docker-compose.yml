@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: envhub-postgres
+    environment:
+      POSTGRES_USER: envhub_user
+      POSTGRES_PASSWORD: envhub_password
+      POSTGRES_DB: envhub_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U envhub_user -d envhub_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: envhub-api
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://envhub_user:envhub_password@postgres:5432/envhub_db?sslmode=disable
+      ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: sh -c "sleep 5 && ./api"
+
+volumes:
+  postgres_data:
