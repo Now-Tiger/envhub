@@ -1,0 +1,33 @@
+.PHONY: help build run stop clean test
+
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
+
+build: ## Build Docker images
+	docker-compose build
+
+up: ## Start all services
+	docker-compose up -d
+
+down: ## Stop all services
+	docker-compose down
+
+logs: ## View logs
+	docker-compose logs -f api
+
+logs-db: ## View database logs
+	docker-compose logs -f postgres
+
+restart: ## Restart API service
+	docker-compose restart api
+
+clean: ## Remove containers and volumes
+	docker-compose down -v
+
+psql: ## Connect to PostgreSQL
+	docker-compose exec postgres psql -U envhub_user -d envhub_db
+
+test: ## Run tests
+	go test -v ./...
+
+.DEFAULT_GOAL := help
