@@ -19,6 +19,7 @@ go.work
 # Environment files
 .env
 .env.local
+.env.*.local
 
 # IDE
 .vscode/
@@ -37,3 +38,6 @@ Thumbs.db
 # Database
 *.db
 *.sqlite
+
+# Do NOT ignore generated sqlc files - we commit them
+# internal/repository/*.go  ← Don't add this line!
