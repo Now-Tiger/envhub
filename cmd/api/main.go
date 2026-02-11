@@ -54,7 +54,6 @@ func main() {
 	r := chi.NewRouter()
 
 	// Middleware
-	// Middleware
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
