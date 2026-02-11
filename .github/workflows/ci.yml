@@ -6,9 +6,14 @@ on:
   pull_request:
     branches: [main, develop]
 
+# Add workflow-level permissions
+permissions:
+  contents: read
+  security-events: write
+
 env:
-  GO_VERSION: "1.22"
-  SQLC_VERSION: "1.26.0"
+  GO_VERSION: "1.24"
+  SQLC_VERSION: "1.30.0" # Updated to match your local version
 
 jobs:
   # Job 1: Lint and Format Check
@@ -202,6 +207,10 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    # Add job-level permissions for security scanning
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Checkout code
