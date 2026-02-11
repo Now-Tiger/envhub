@@ -28,7 +28,7 @@ func NewPool(ctx context.Context, cfg Config) (*pgxpool.Pool, error) {
 	var poolConfig *pgxpool.Config
 	var err error
 
-	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
+	if dbURL := os.Getenv("DB_URL"); dbURL != "" {
 		poolConfig, err = pgxpool.ParseConfig(dbURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse DATABASE_URL: %w", err)

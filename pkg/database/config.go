@@ -10,12 +10,12 @@ import (
 // LoadConfigFromEnv loads database configuration from environment variables
 func LoadConfigFromEnv() (Config, error) {
 	cfg := Config{
-		Host:     getEnv("DB_HOST", "postgres"),
+		Host:     getEnv("DB_HOST", ""),
 		Port:     getEnvAsInt("DB_PORT", 5432),
-		User:     getEnv("DB_USER", "envhub_user"),
-		Password: getEnv("DB_PASSWORD", "envhub_password"),
-		Database: getEnv("DB_NAME", "envhub_db"),
-		SSLMode:  getEnv("DB_SSLMODE", "disable"),
+		User:     getEnv("DB_USER", ""),
+		Password: getEnv("DB_PASSWORD", ""),
+		Database: getEnv("DB_NAME", ""),
+		SSLMode:  getEnv("DB_SSLMODE", ""),
 
 		// Connection pool settings
 		MaxConns:        int32(getEnvAsInt("DB_MAX_CONNS", 25)),
