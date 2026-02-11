@@ -69,4 +69,3 @@ func getEnvAsDuration(key string, defaultValue string) time.Duration {
 	}
 	return duration
 }
-
