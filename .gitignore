@@ -41,5 +41,7 @@ Thumbs.db
 
 migrations/003_seed_envhub.sql
 ./migrations
+./Documents
+Documents/
 # Do NOT ignore generated sqlc files - we commit them
 # internal/repository/*.go  ← Don't add this line!
