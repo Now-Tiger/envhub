@@ -26,10 +26,6 @@ permissions:
   security-events: write
   actions: read
 
-env:
-  GO_VERSION: "1.24"
-  SQLC_VERSION: "1.30.0"
-
 jobs:
   lint:
     name: Lint & Format
@@ -41,7 +37,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: ${{ secrets.GO_VERSION }}
           # Built-in caching for Go modules and build cache
           cache: true
 
@@ -60,7 +56,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: ${{ secrets.GO_VERSION }}
           cache: true
 
       # Cache the SQLC binary to avoid re-downloading/re-building every time
@@ -69,11 +65,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/go/bin/sqlc
-          key: ${{ runner.os }}-sqlc-${{ env.SQLC_VERSION }}
+          key: ${{ runner.os }}-sqlc-${{ secrets.SQLC_VERSION }}
 
       - name: Install SQLC
         if: steps.cache-sqlc.outputs.cache-hit != 'true'
-        run: go install github.com/sqlc-dev/sqlc/cmd/sqlc@v${{ env.SQLC_VERSION }}
+        run: go install github.com/sqlc-dev/sqlc/cmd/sqlc@v${{ secrets.SQLC_VERSION }}
 
       - name: Generate SQLC code
         run: sqlc generate
@@ -89,9 +85,10 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: envhub_user
-          POSTGRES_PASSWORD: envhub_password
-          POSTGRES_DB: envhub_test
+          POSTGRES_DB: ${{ secrets.CI_DB_NAME }}
+          POSTGRES_USER: ${{ secrets.CI_DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+
         ports:
           - 5432:5432
     steps:
@@ -100,7 +97,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: ${{ secrets.GO_VERSION }}
           cache: true
       - name: Run tests
         run: go test -v -race ./...
