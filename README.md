@@ -1,6 +1,6 @@
 # EnvHub Backend
 
-Secure environment variable management platform built with Go.
+**EnvHub** is a **secure environment variable management platform** that replaces insecure practices like sharing `.env` files via Slack. It provides encrypted storage for API keys, database credentials, and secrets across multiple environments (dev/staging/prod). Developers use a CLI tool to inject secrets directly into their applications at runtime, ensuring sensitive data never touches disk in plaintext.
 
 ## Prerequisites
 
