@@ -28,9 +28,6 @@ func NewPool(ctx context.Context, cfg Config) (*pgxpool.Pool, error) {
 	var poolConfig *pgxpool.Config
 	var err error
 
-	// FIX: Check for DATABASE_URL environment variable first.
-	// Docker Compose usually provides the full connection string (including the correct host)
-	// via this environment variable. This prevents the app from defaulting to 'localhost'.
 	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
 		poolConfig, err = pgxpool.ParseConfig(dbURL)
 		if err != nil {
