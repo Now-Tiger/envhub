@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: envhub-postgres
     environment:
-      POSTGRES_USER: envhub_user
-      POSTGRES_PASSWORD: envhub_password
-      POSTGRES_DB: envhub_db
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
@@ -29,13 +29,13 @@ services:
     environment:
       PORT: 8080
       # Explicitly set DB connection using service name
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: envhub_user
-      DB_PASSWORD: envhub_password
-      DB_NAME: envhub_db
-      DB_SSLMODE: disable
-      ENV: development
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_SSLMODE: ${DB_SSLMODE}
+      ENV: ${ENV}
     depends_on:
       postgres:
         condition: service_healthy
