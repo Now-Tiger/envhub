@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+docs/
+Documents/
+*.md
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files (secrets)
+.env
+.env.local
+.env.*.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+bin/
+tmp/
+vendor/
+
+# Test files
+*_test.go
+*.test
+coverage.out
+
+# Local config overrides
+docker-compose.override.yml
+
+# Secrets
+secrets/
+keys/
+master-key*
+
+# OpenCode
+.opencode/
