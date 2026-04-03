@@ -2,26 +2,25 @@ package database
 
 import (
 	"fmt"
-	"os"
-	"strconv"
-	"time"
+
+	env "github.com/Now-Tiger/envhub/scripts"
 )
 
 // LoadConfigFromEnv loads database configuration from environment variables
 func LoadConfigFromEnv() (Config, error) {
 	cfg := Config{
-		Host:     getEnv("DB_HOST", ""),
-		Port:     getEnvAsInt("DB_PORT", 5432),
-		User:     getEnv("DB_USER", ""),
-		Password: getEnv("DB_PASSWORD", ""),
-		Database: getEnv("DB_NAME", ""),
-		SSLMode:  getEnv("DB_SSLMODE", ""),
+		Host:     env.GetEnv("DB_HOST", ""),
+		Port:     env.GetEnvAsInt("DB_PORT", 5432),
+		User:     env.GetEnv("DB_USER", ""),
+		Password: env.GetEnv("DB_PASSWORD", ""),
+		Database: env.GetEnv("DB_NAME", ""),
+		SSLMode:  env.GetEnv("DB_SSLMODE", ""),
 
 		// Connection pool settings
-		MaxConns:        int32(getEnvAsInt("DB_MAX_CONNS", 25)),
-		MinConns:        int32(getEnvAsInt("DB_MIN_CONNS", 5)),
-		MaxConnLifetime: getEnvAsDuration("DB_MAX_CONN_LIFETIME", "1h"),
-		MaxConnIdleTime: getEnvAsDuration("DB_MAX_CONN_IDLE_TIME", "30m"),
+		MaxConns:        int32(env.GetEnvAsInt("DB_MAX_CONNS", 25)),
+		MinConns:        int32(env.GetEnvAsInt("DB_MIN_CONNS", 5)),
+		MaxConnLifetime: env.GetEnvAsDuration("DB_MAX_CONN_LIFETIME", "1h"),
+		MaxConnIdleTime: env.GetEnvAsDuration("DB_MAX_CONN_IDLE_TIME", "30m"),
 	}
 
 	// Validate required fields
@@ -36,36 +35,4 @@ func LoadConfigFromEnv() (Config, error) {
 	}
 
 	return cfg, nil
-}
-
-// Helper functions
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-func getEnvAsInt(key string, defaultValue int) int {
-	valueStr := os.Getenv(key)
-	if valueStr == "" {
-		return defaultValue
-	}
-	value, err := strconv.Atoi(valueStr)
-	if err != nil {
-		return defaultValue
-	}
-	return value
-}
-
-func getEnvAsDuration(key string, defaultValue string) time.Duration {
-	valueStr := os.Getenv(key)
-	if valueStr == "" {
-		valueStr = defaultValue
-	}
-	duration, err := time.ParseDuration(valueStr)
-	if err != nil {
-		duration, _ = time.ParseDuration(defaultValue)
-	}
-	return duration
 }

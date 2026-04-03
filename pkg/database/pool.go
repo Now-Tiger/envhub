@@ -3,9 +3,9 @@ package database
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
+	env "github.com/Now-Tiger/envhub/scripts"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -28,7 +28,7 @@ func NewPool(ctx context.Context, cfg Config) (*pgxpool.Pool, error) {
 	var poolConfig *pgxpool.Config
 	var err error
 
-	if dbURL := os.Getenv("DB_URL"); dbURL != "" {
+	if dbURL := env.GetEnv("DB_URL", ""); dbURL != "" {
 		poolConfig, err = pgxpool.ParseConfig(dbURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse DATABASE_URL: %w", err)
