@@ -16,10 +16,14 @@ dist/
 # Go workspace file
 go.work
 
-# Environment files
+# Environment files (SECURITY - never commit secrets)
 .env
 .env.local
 .env.*.local
+.env.production
+*.pem
+*.key
+*.crt
 
 # IDE
 .vscode/
@@ -34,14 +38,28 @@ Thumbs.db
 
 # Docker
 *.log
+docker-compose.override.yml
 
 # Database
 *.db
 *.sqlite
 
-migrations/003_seed_envhub.sql
-./migrations
-./Documents
+# Secrets (never commit)
+secrets/
+keys/
+master-key*
+*_secret*
+*_key*
+
+# Build artifacts
+api/bin/
+tmp/
+vendor/
+
+# SQLC generated files - we DO commit these!
+# internal/repository/*.sql.go - already committed
+
+# Migration overrides
+migrations/
 Documents/
-# Do NOT ignore generated sqlc files - we commit them
-# internal/repository/*.go  ← Don't add this line!
+docs/
