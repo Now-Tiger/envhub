@@ -327,6 +327,7 @@ type User struct {
 	FullName       *string            `json:"full_name"`
 	AvatarUrl      *string            `json:"avatar_url"`
 	AuthProviderID *string            `json:"auth_provider_id"`
+	PasswordHash   *string            `json:"password_hash"`
 	IsActive       *bool              `json:"is_active"`
 	EmailVerified  *bool              `json:"email_verified"`
 	CreatedAt      time.Time          `json:"created_at"`

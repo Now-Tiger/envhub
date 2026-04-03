@@ -18,10 +18,11 @@ INSERT INTO users (
     avatar_url,
     auth_provider_id,
     is_active,
-    email_verified
+    email_verified,
+    password_hash
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
-) RETURNING id, email, full_name, avatar_url, auth_provider_id, is_active, email_verified, created_at, updated_at, last_login_at, deleted_at
+    $1, $2, $3, $4, $5, $6, $7
+) RETURNING id, email, full_name, avatar_url, auth_provider_id, password_hash, is_active, email_verified, created_at, updated_at, last_login_at, deleted_at
 `
 
 type CreateUserParams struct {
@@ -31,6 +32,7 @@ type CreateUserParams struct {
 	AuthProviderID *string `json:"auth_provider_id"`
 	IsActive       *bool   `json:"is_active"`
 	EmailVerified  *bool   `json:"email_verified"`
+	PasswordHash   *string `json:"password_hash"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -41,6 +43,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.AuthProviderID,
 		arg.IsActive,
 		arg.EmailVerified,
+		arg.PasswordHash,
 	)
 	var i User
 	err := row.Scan(
@@ -49,6 +52,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.FullName,
 		&i.AvatarUrl,
 		&i.AuthProviderID,
+		&i.PasswordHash,
 		&i.IsActive,
 		&i.EmailVerified,
 		&i.CreatedAt,
@@ -85,7 +89,7 @@ func (q *Queries) GetUserByAuthProviderID(ctx context.Context, authProviderID *s
 }
 
 const GetUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, full_name, avatar_url, auth_provider_id, is_active, email_verified, created_at, updated_at, last_login_at, deleted_at FROM users
+SELECT id, email, full_name, avatar_url, auth_provider_id, password_hash, is_active, email_verified, created_at, updated_at, last_login_at, deleted_at FROM users
 WHERE email = $1 AND deleted_at IS NULL
 LIMIT 1
 `
@@ -99,6 +103,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.FullName,
 		&i.AvatarUrl,
 		&i.AuthProviderID,
+		&i.PasswordHash,
 		&i.IsActive,
 		&i.EmailVerified,
 		&i.CreatedAt,

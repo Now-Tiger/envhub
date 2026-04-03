@@ -7,8 +7,10 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const CreateOrganization = `-- name: CreateOrganization :one
@@ -133,6 +135,214 @@ func (q *Queries) ListUserOrganizations(ctx context.Context, userID uuid.UUID) (
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const ListOrganizationsByOwner = `-- name: ListOrganizationsByOwner :many
+SELECT id, name, slug, plan_type, max_projects, max_secrets_per_project, owner_id, created_at, updated_at, deleted_at FROM organizations
+WHERE owner_id = $1 AND deleted_at IS NULL
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListOrganizationsByOwner(ctx context.Context, userID uuid.UUID) ([]Organization, error) {
+	rows, err := q.db.Query(ctx, ListOrganizationsByOwner, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Organization{}
+	for rows.Next() {
+		var i Organization
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.PlanType,
+			&i.MaxProjects,
+			&i.MaxSecretsPerProject,
+			&i.OwnerID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const CreateOrganizationMember = `-- name: CreateOrganizationMember :one
+INSERT INTO organization_members (
+    organization_id,
+    user_id,
+    role,
+    joined_at
+) VALUES ($1, $2, $3, $4) RETURNING id, organization_id, user_id, role, invited_by, invited_at, joined_at, created_at, updated_at
+`
+
+type CreateOrganizationMemberParams struct {
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	UserID         uuid.UUID          `json:"user_id"`
+	Role           string             `json:"role"`
+	JoinedAt       pgtype.Timestamptz `json:"joined_at"`
+}
+
+func (q *Queries) CreateOrganizationMember(ctx context.Context, arg CreateOrganizationMemberParams) (OrganizationMember, error) {
+	row := q.db.QueryRow(ctx, CreateOrganizationMember,
+		arg.OrganizationID,
+		arg.UserID,
+		arg.Role,
+		arg.JoinedAt,
+	)
+	var i OrganizationMember
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.UserID,
+		&i.Role,
+		&i.InvitedBy,
+		&i.InvitedAt,
+		&i.JoinedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const GetOrganizationMember = `-- name: GetOrganizationMember :one
+SELECT id, organization_id, user_id, role, invited_by, invited_at, joined_at, created_at, updated_at FROM organization_members
+WHERE organization_id = $1 AND user_id = $2
+LIMIT 1
+`
+
+type GetOrganizationMemberParams struct {
+	OrganizationID uuid.UUID `json:"organization_id"`
+	UserID         uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) GetOrganizationMember(ctx context.Context, arg GetOrganizationMemberParams) (OrganizationMember, error) {
+	row := q.db.QueryRow(ctx, GetOrganizationMember, arg.OrganizationID, arg.UserID)
+	var i OrganizationMember
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.UserID,
+		&i.Role,
+		&i.InvitedBy,
+		&i.InvitedAt,
+		&i.JoinedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const UpdateOrganizationMemberRole = `-- name: UpdateOrganizationMemberRole :one
+UPDATE organization_members
+SET role = $3, updated_at = NOW()
+WHERE organization_id = $1 AND user_id = $2
+RETURNING id, organization_id, user_id, role, invited_by, invited_at, joined_at, created_at, updated_at
+`
+
+type UpdateOrganizationMemberRoleParams struct {
+	OrganizationID uuid.UUID `json:"organization_id"`
+	UserID         uuid.UUID `json:"user_id"`
+	Role           string    `json:"role"`
+}
+
+func (q *Queries) UpdateOrganizationMemberRole(ctx context.Context, arg UpdateOrganizationMemberRoleParams) (OrganizationMember, error) {
+	row := q.db.QueryRow(ctx, UpdateOrganizationMemberRole,
+		arg.OrganizationID,
+		arg.UserID,
+		arg.Role,
+	)
+	var i OrganizationMember
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.UserID,
+		&i.Role,
+		&i.InvitedBy,
+		&i.InvitedAt,
+		&i.JoinedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const DeleteOrganizationMember = `-- name: DeleteOrganizationMember :exec
+DELETE FROM organization_members
+WHERE organization_id = $1 AND user_id = $2
+`
+
+type DeleteOrganizationMemberParams struct {
+	OrganizationID uuid.UUID `json:"organization_id"`
+	UserID         uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) DeleteOrganizationMember(ctx context.Context, arg DeleteOrganizationMemberParams) error {
+	_, err := q.db.Exec(ctx, DeleteOrganizationMember, arg.OrganizationID, arg.UserID)
+	return err
+}
+
+const ListOrganizationMembers = `-- name: ListOrganizationMembers :many
+SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.invited_at, om.joined_at, om.created_at, om.updated_at, u.email, u.full_name, u.avatar_url 
+FROM organization_members om
+JOIN users u ON om.user_id = u.id
+WHERE om.organization_id = $1
+ORDER BY om.joined_at DESC
+`
+
+type ListOrganizationMembersRow struct {
+	ID             uuid.UUID          `json:"id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	UserID         uuid.UUID          `json:"user_id"`
+	Role           OrgRole            `json:"role"`
+	InvitedBy      pgtype.UUID        `json:"invited_by"`
+	InvitedAt      pgtype.Timestamptz `json:"invited_at"`
+	JoinedAt       pgtype.Timestamptz `json:"joined_at"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
+	Email          string             `json:"email"`
+	FullName       pgtype.Text        `json:"full_name"`
+	AvatarUrl      pgtype.Text        `json:"avatar_url"`
+}
+
+func (q *Queries) ListOrganizationMembers(ctx context.Context, organizationID uuid.UUID) ([]ListOrganizationMembersRow, error) {
+	rows, err := q.db.Query(ctx, ListOrganizationMembers, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOrganizationMembersRow{}
+	for rows.Next() {
+		var i ListOrganizationMembersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.UserID,
+			&i.Role,
+			&i.InvitedBy,
+			&i.InvitedAt,
+			&i.JoinedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Email,
+			&i.FullName,
+			&i.AvatarUrl,
 		); err != nil {
 			return nil, err
 		}

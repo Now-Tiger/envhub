@@ -20,9 +20,10 @@ INSERT INTO users (
     avatar_url,
     auth_provider_id,
     is_active,
-    email_verified
+    email_verified,
+    password_hash
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5, $6, $7
 ) RETURNING *;
 
 -- name: UpdateUser :one

@@ -23,11 +23,13 @@ type Querier interface {
 	DeactivateSecret(ctx context.Context, arg DeactivateSecretParams) error
 	DeleteEnvironment(ctx context.Context, id uuid.UUID) error
 	GetAPITokenByHash(ctx context.Context, tokenHash string) (ApiToken, error)
+	GetAPITokenByID(ctx context.Context, id uuid.UUID) (ApiToken, error)
 	GetEnvironmentByID(ctx context.Context, id uuid.UUID) (Environment, error)
 	GetEnvironmentByName(ctx context.Context, arg GetEnvironmentByNameParams) (Environment, error)
 	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
 	GetOrganizationBySlug(ctx context.Context, slug string) (Organization, error)
 	GetProjectByID(ctx context.Context, id uuid.UUID) (Project, error)
+	GetProjectByName(ctx context.Context, name string) (Project, error)
 	GetSecretByID(ctx context.Context, id uuid.UUID) (Secret, error)
 	GetSecretByKey(ctx context.Context, arg GetSecretByKeyParams) (Secret, error)
 	GetUserByAuthProviderID(ctx context.Context, authProviderID *string) (User, error)
@@ -41,6 +43,12 @@ type Querier interface {
 	ListSecretsByEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Secret, error)
 	ListUserAPITokens(ctx context.Context, userID uuid.UUID) ([]ApiToken, error)
 	ListUserOrganizations(ctx context.Context, userID uuid.UUID) ([]Organization, error)
+	ListOrganizationsByOwner(ctx context.Context, userID uuid.UUID) ([]Organization, error)
+	CreateOrganizationMember(ctx context.Context, arg CreateOrganizationMemberParams) (OrganizationMember, error)
+	GetOrganizationMember(ctx context.Context, arg GetOrganizationMemberParams) (OrganizationMember, error)
+	UpdateOrganizationMemberRole(ctx context.Context, arg UpdateOrganizationMemberRoleParams) (OrganizationMember, error)
+	DeleteOrganizationMember(ctx context.Context, arg DeleteOrganizationMemberParams) error
+	ListOrganizationMembers(ctx context.Context, organizationID uuid.UUID) ([]ListOrganizationMembersRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	RevokeAPIToken(ctx context.Context, id uuid.UUID) error
 	RotateProjectDEK(ctx context.Context, arg RotateProjectDEKParams) (Project, error)

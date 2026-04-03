@@ -37,6 +37,41 @@ JOIN organization_members om ON om.organization_id = o.id
 WHERE om.user_id = $1 AND o.deleted_at IS NULL
 ORDER BY o.created_at DESC;
 
+-- name: ListOrganizationsByOwner :many
+SELECT * FROM organizations
+WHERE owner_id = $1 AND deleted_at IS NULL
+ORDER BY created_at DESC;
+
+-- name: CreateOrganizationMember :one
+INSERT INTO organization_members (
+    organization_id,
+    user_id,
+    role,
+    joined_at
+) VALUES ($1, $2, $3, $4) RETURNING *;
+
+-- name: GetOrganizationMember :one
+SELECT * FROM organization_members
+WHERE organization_id = $1 AND user_id = $2
+LIMIT 1;
+
+-- name: UpdateOrganizationMemberRole :one
+UPDATE organization_members
+SET role = $3, updated_at = NOW()
+WHERE organization_id = $1 AND user_id = $2
+RETURNING *;
+
+-- name: DeleteOrganizationMember :exec
+DELETE FROM organization_members
+WHERE organization_id = $1 AND user_id = $2;
+
+-- name: ListOrganizationMembers :many
+SELECT om.*, u.email, u.full_name, u.avatar_url 
+FROM organization_members om
+JOIN users u ON om.user_id = u.id
+WHERE om.organization_id = $1
+ORDER BY om.joined_at DESC;
+
 -- name: SoftDeleteOrganization :exec
 UPDATE organizations
 SET deleted_at = NOW()

@@ -135,6 +135,30 @@ func (q *Queries) RevokeAPIToken(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const GetAPITokenByID = `-- name: GetAPITokenByID :one
+SELECT id, user_id, name, token_hash, scopes, organization_id, expires_at, last_used_at, usage_count, created_at, revoked_at FROM api_tokens
+WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetAPITokenByID(ctx context.Context, id uuid.UUID) (ApiToken, error) {
+	row := q.db.QueryRow(ctx, GetAPITokenByID, id)
+	var i ApiToken
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.TokenHash,
+		&i.Scopes,
+		&i.OrganizationID,
+		&i.ExpiresAt,
+		&i.LastUsedAt,
+		&i.UsageCount,
+		&i.CreatedAt,
+		&i.RevokedAt,
+	)
+	return i, err
+}
+
 const UpdateTokenUsage = `-- name: UpdateTokenUsage :exec
 UPDATE api_tokens
 SET 

@@ -32,3 +32,7 @@ WHERE id = $1;
 SELECT * FROM api_tokens
 WHERE user_id = $1 AND revoked_at IS NULL
 ORDER BY created_at DESC;
+
+-- name: GetAPITokenByID :one
+SELECT * FROM api_tokens
+WHERE id = $1 LIMIT 1;

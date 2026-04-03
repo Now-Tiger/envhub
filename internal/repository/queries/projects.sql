@@ -3,6 +3,11 @@ SELECT * FROM projects
 WHERE id = $1 AND deleted_at IS NULL
 LIMIT 1;
 
+-- name: GetProjectByName :one
+SELECT * FROM projects
+WHERE name = $1 AND deleted_at IS NULL
+LIMIT 1;
+
 -- name: CreateProject :one
 INSERT INTO projects (
     organization_id,
