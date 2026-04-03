@@ -1,0 +1,774 @@
+openapi: 3.0.3
+info:
+  title: EnvHub API
+  description: |
+    EnvHub is a secure environment variable management platform.
+    
+    ## Authentication
+    EnvHub supports two authentication methods:
+    
+    1. **JWT Token** - For web dashboard access (short-lived, 1 hour expiry)
+    2. **CLI Token** - For CLI tool access (long-lived, 30 days expiry)
+    
+    ## CLI Authentication Flow
+    
+    To use the EnvHub CLI:
+    
+    1. Generate a CLI token via the dashboard or API
+    2. Use the token in the `Authorization` header: `Authorization: Bearer <token>`
+    
+    ## Rate Limiting
+    
+    - 100 requests per minute per IP
+    - 429 response when exceeded
+  version: 1.0.0
+  contact:
+    name: EnvHub Support
+    url: https://envhub.dev
+  license:
+    name: Proprietary
+    url: https://envhub.dev/license
+
+servers:
+  - url: https://api.envhub.dev
+    description: Production server
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User authentication and token management
+  - name: CLI
+    description: Optimized endpoints for CLI tool
+  - name: Projects
+    description: Project management endpoints
+  - name: Secrets
+    description: Secret management endpoints
+  - name: Environments
+    description: Environment management endpoints
+
+paths:
+  # ==================== AUTHENTICATION ====================
+  /api/v1/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: user@example.com
+              password: securepassword123
+              full_name: John Doe
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request body
+        '409':
+          description: User already exists
+
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login with email and password
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: user@example.com
+              password: securepassword123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+
+  /api/v1/auth/cli-login:
+    post:
+      tags:
+        - Authentication
+      summary: Generate long-lived CLI token
+      operationId: cliLogin
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CLILoginRequest'
+            example:
+              project_id: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: CLI token generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CLILoginResponse'
+        '401':
+          description: Authentication required
+        '404':
+          description: Project not found
+
+  /api/v1/auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current authenticated user
+      operationId: getCurrentUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserResponse'
+        '401':
+          description: Not authenticated
+
+  # ==================== CLI ENDPOINTS ====================
+  /api/v1/cli/secrets/{project}/{env}:
+    get:
+      tags:
+        - CLI
+      summary: Get secrets for CLI (optimized endpoint)
+      description: |
+        Returns secrets as a flat key-value map optimized for CLI consumption.
+        Supports caching via Cache-Control headers.
+      operationId: getCLISecrets
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: project
+          in: path
+          required: true
+          description: Project name
+          schema:
+            type: string
+            example: my-project
+        - name: env
+          in: path
+          required: true
+          description: Environment name (e.g., development, staging, production)
+          schema:
+            type: string
+            example: production
+      responses:
+        '200':
+          description: Secrets retrieved successfully
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              description: Cache-Control header for client-side caching
+            ETag:
+              schema:
+                type: string
+              description: ETag for conditional requests
+            X-EnvHub-Cache:
+              schema:
+                type: string
+              description: Cache status (HIT or MISS)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CLISecretsResponse'
+              example:
+                project: my-project
+                environment: production
+                secrets:
+                  DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
+                  API_KEY: "sk-live-xxxxxxxx"
+                  STRIPE_SECRET: "sk_live_xxxxxxxx"
+                retrieved_at: "2024-01-15T10:30:00Z"
+                version: "1.0"
+        '401':
+          description: Authentication required
+        '404':
+          description: Project or environment not found
+
+  # ==================== PROJECTS ====================
+  /api/v1/projects:
+    post:
+      tags:
+        - Projects
+      summary: Create a new project
+      operationId: createProject
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Not authenticated
+
+    get:
+      tags:
+        - Projects
+      summary: List user's projects
+      operationId: listProjects
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListProjectsResponse'
+
+  /api/v1/projects/{id}:
+    get:
+      tags:
+        - Projects
+      summary: Get project details
+      operationId: getProject
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '404':
+          description: Project not found
+
+    patch:
+      tags:
+        - Projects
+      summary: Update project
+      operationId: updateProject
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+      responses:
+        '200':
+          description: Project updated
+
+    delete:
+      tags:
+        - Projects
+      summary: Delete project
+      operationId: deleteProject
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Project deleted
+
+  # ==================== SECRETS ====================
+  /api/v1/projects/{id}/secrets:
+    post:
+      tags:
+        - Secrets
+      summary: Create a secret
+      operationId: createSecret
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: environment_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSecretRequest'
+      responses:
+        '201':
+          description: Secret created
+
+    get:
+      tags:
+        - Secrets
+      summary: List secrets for environment
+      operationId: listSecrets
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: environment_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of secrets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSecretsResponse'
+
+  /api/v1/projects/{id}/secrets/{envName}:
+    get:
+      tags:
+        - Secrets
+      summary: Get secrets by environment name
+      operationId: getSecretsByEnvironment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: envName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Secrets retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecretsAsEnvResponse'
+
+  # ==================== ENVIRONMENTS ====================
+  /api/v1/projects/{id}/environments:
+    post:
+      tags:
+        - Environments
+      summary: Create an environment
+      operationId: createEnvironment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEnvironmentRequest'
+      responses:
+        '201':
+          description: Environment created
+
+    get:
+      tags:
+        - Environments
+      summary: List environments
+      operationId: listEnvironments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of environments
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token for authentication. Obtain via `/api/v1/auth/login` or `/api/v1/auth/cli-login`.
+        Use in the Authorization header: `Authorization: Bearer <token>`
+
+  schemas:
+    # Auth schemas
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - full_name
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: securepassword123
+        full_name:
+          type: string
+          example: John Doe
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          example: securepassword123
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: '#/components/schemas/CurrentUserResponse'
+        expires_at:
+          type: string
+          format: date-time
+
+    CLILoginRequest:
+      type: object
+      required:
+        - project_id
+      properties:
+        project_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+    CLILoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Long-lived CLI token (30 days)
+          example: "a1b2c3d4e5f6..."
+        expires_at:
+          type: string
+          format: date-time
+          description: Token expiry date
+
+    CurrentUserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        full_name:
+          type: string
+        avatar_url:
+          type: string
+
+    # Project schemas
+    CreateProjectRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: my-project
+        description:
+          type: string
+          example: My awesome project
+        color:
+          type: string
+          example: "#FF5733"
+        icon:
+          type: string
+          example: 🚀
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        color:
+          type: string
+        icon:
+          type: string
+
+    ProjectResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        dek_version:
+          type: integer
+        color:
+          type: string
+        icon:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ListProjectsResponse:
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationResponse'
+
+    # Secret schemas
+    CreateSecretRequest:
+      type: object
+      required:
+        - key
+        - value
+      properties:
+        key:
+          type: string
+          maxLength: 255
+          example: DATABASE_URL
+        value:
+          type: string
+          example: postgresql://user:pass@localhost:5432/db
+        description:
+          type: string
+          maxLength: 500
+          example: Production database connection string
+
+    SecretResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        description:
+          type: string
+        version:
+          type: integer
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ListSecretsResponse:
+      type: object
+      properties:
+        secrets:
+          type: array
+          items:
+            $ref: '#/components/schemas/SecretResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationResponse'
+
+    SecretsAsEnvResponse:
+      type: object
+      additionalProperties:
+        type: string
+      example:
+        DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
+        API_KEY: "sk-live-xxxxxxxx"
+
+    # CLI-specific response
+    CLISecretsResponse:
+      type: object
+      properties:
+        project:
+          type: string
+        environment:
+          type: string
+        secrets:
+          $ref: '#/components/schemas/SecretsAsEnvResponse'
+        retrieved_at:
+          type: string
+          format: date-time
+        version:
+          type: string
+
+    # Environment schemas
+    CreateEnvironmentRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: production
+        description:
+          type: string
+          example: Production environment
+
+    EnvironmentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    # Common schemas
+    PaginationResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_items:
+          type: integer
+        total_pages:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        status_code:
+          type: integer
+        message:
+          type: string
+        error:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
