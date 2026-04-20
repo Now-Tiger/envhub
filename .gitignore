@@ -62,4 +62,6 @@ vendor/
 # Migration overrides
 migrations/
 Documents/
-docs/
+docs/phase-*.md
+docs/plans-subscriptions.md
+docs/EnvHub-API-Collection.json
