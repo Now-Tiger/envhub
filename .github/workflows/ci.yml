@@ -89,9 +89,15 @@ jobs:
 
       - name: Run database migrations
         run: |
-          for f in migrations/*.sql; do
-            PGPASSWORD=${{ secrets.CI_DB_PASSWORD }} psql -h localhost -p 5432 -U ${{ secrets.CI_DB_USER }} -d ${{ secrets.CI_DB_NAME }} -f "$f" || true
+          set -e
+          for f in $(ls -1 migrations/*.sql | sort); do
+            echo "Running migration: $f"
+            PGPASSWORD=${{ secrets.CI_DB_PASSWORD }} psql -h localhost -p 5432 -U ${{ secrets.CI_DB_USER }} -d ${{ secrets.CI_DB_NAME }} -f "$f"
           done
+
+      - name: Verify tables exist
+        run: |
+          PGPASSWORD=${{ secrets.CI_DB_PASSWORD }} psql -h localhost -p 5432 -U ${{ secrets.CI_DB_USER }} -d ${{ secrets.CI_DB_NAME }} -c "\dt"
 
       - name: Generate SQLC code
         run: sqlc generate
