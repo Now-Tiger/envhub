@@ -49,6 +49,15 @@ jobs:
   sqlc-verify:
     name: Verify SQLC Generation
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ${{ secrets.CI_DB_NAME }}
+          POSTGRES_USER: ${{ secrets.CI_DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+        ports:
+          - 5432:5432
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -70,6 +79,17 @@ jobs:
       - name: Install SQLC
         if: steps.cache-sqlc.outputs.cache-hit != 'true'
         run: go install github.com/sqlc-dev/sqlc/cmd/sqlc@v${{ secrets.SQLC_VERSION }}
+
+      - name: Wait for database
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U ${{ secrets.CI_DB_USER }} && break
+            sleep 1
+          done
+
+      - name: Create schema tables
+        run: |
+          PGPASSWORD=${{ secrets.CI_DB_PASSWORD }} psql -h localhost -p 5432 -U ${{ secrets.CI_DB_USER }} -d ${{ secrets.CI_DB_NAME }} -f internal/repository/queries/schema.sql || true
 
       - name: Generate SQLC code
         run: sqlc generate
