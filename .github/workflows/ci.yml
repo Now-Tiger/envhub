@@ -87,9 +87,11 @@ jobs:
             sleep 1
           done
 
-      - name: Create schema tables
+      - name: Run database migrations
         run: |
-          PGPASSWORD=${{ secrets.CI_DB_PASSWORD }} psql -h localhost -p 5432 -U ${{ secrets.CI_DB_USER }} -d ${{ secrets.CI_DB_NAME }} -f internal/repository/queries/schema.sql || true
+          for f in migrations/*.sql; do
+            PGPASSWORD=${{ secrets.CI_DB_PASSWORD }} psql -h localhost -p 5432 -U ${{ secrets.CI_DB_USER }} -d ${{ secrets.CI_DB_NAME }} -f "$f" || true
+          done
 
       - name: Generate SQLC code
         run: sqlc generate
@@ -132,6 +134,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
       - name: Run Trivy
         uses: aquasecurity/trivy-action@v0.28.0
         with:
