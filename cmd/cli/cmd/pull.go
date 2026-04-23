@@ -60,7 +60,7 @@ func pullCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("request failed: %w", err)
 			}
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 
 			if resp.StatusCode != 200 {
 				body, _ := io.ReadAll(resp.Body)
@@ -82,7 +82,7 @@ func pullCmd() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("failed to create output file: %w", err)
 				}
-				defer f.Close()
+				defer f.Close() //nolint:errcheck
 				util.WriteEnvFile(f, secrets)
 				printSuccess("Secrets written to " + output)
 			} else {

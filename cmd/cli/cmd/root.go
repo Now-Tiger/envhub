@@ -48,8 +48,8 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.PersistentFlags().BoolVarP(&outputJSON, "output", "o", false, "output in JSON format")
 
 	// Bind viper keys
-	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
-	viper.BindPFlag("no_color", rootCmd.PersistentFlags().Lookup("no-color"))
+	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))   //nolint:errcheck
+	viper.BindPFlag("no_color", rootCmd.PersistentFlags().Lookup("no-color")) //nolint:errcheck
 
 	// Add subcommands
 	rootCmd.AddCommand(loginCmd())
@@ -83,9 +83,4 @@ func printSuccess(msg string) {
 // printInfo prints a styled info message
 func printInfo(msg string) {
 	fmt.Println(style.Info.Render("ℹ ") + msg)
-}
-
-// printWarning prints a styled warning message
-func printWarning(msg string) {
-	fmt.Println(style.Warning.Render("⚠ ") + msg)
 }

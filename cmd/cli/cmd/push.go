@@ -88,7 +88,7 @@ func pushCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("request failed: %w", err)
 			}
-			defer resp.Body.Close()
+			defer resp.Body.Close() //nolint:errcheck
 
 			if resp.StatusCode != 200 && resp.StatusCode != 201 {
 				body, _ := io.ReadAll(resp.Body)

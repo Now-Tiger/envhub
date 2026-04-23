@@ -100,22 +100,7 @@ func getIntQuery(r *http.Request, key string, defaultVal int) int {
 	return intVal
 }
 
-// getStringQuery gets string query parameter
-func getStringQuery(r *http.Request, key string) string {
-	return r.URL.Query().Get(key)
-}
-
-// getUUIDParam gets UUID from URL path parameter
-func getUUIDParam(r *http.Request, param string) (uuid.UUID, error) {
-	return uuid.Parse(r.URL.Query().Get(param))
-}
-
 // parseUUID parses UUID from string
 func parseUUID(s string) (uuid.UUID, error) {
 	return uuid.Parse(s)
-}
-
-// writeSuccess writes success response
-func writeSuccess(w http.ResponseWriter, status int, message string) {
-	respondJSON(w, status, map[string]string{"message": message})
 }

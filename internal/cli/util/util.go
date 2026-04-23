@@ -12,7 +12,7 @@ func WriteEnvFile(w io.Writer, secrets map[string]interface{}) {
 		return
 	}
 	for k, v := range secrets {
-		fmt.Fprintf(w, "%s=%v\n", k, v)
+		fmt.Fprintf(w, "%s=%v\n", k, v) //nolint:errcheck
 	}
 }
 
